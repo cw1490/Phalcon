@@ -145,7 +145,5 @@ phalcon scaffold --table-name products
 
 见视频
 
-```
-
 
 
