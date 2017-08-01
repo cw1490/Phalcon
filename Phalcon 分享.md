@@ -473,7 +473,7 @@ tutorial/
 
 不需要任何有关Phalcon的 “library” 目录。该框架已经被加载到内存中
 
-###3.2 引导程序
+### 3.2 引导程序
 
 1.  设置自动加载器.
 
@@ -481,7 +481,7 @@ tutorial/
 
 3.  处理应用请求.
 
-###3.3 自动加载
+### 3.3 自动加载
 
 [Phalcon\\Loader](http://www.iphalcon.cn/api/Phalcon_Loader.html) **组件**
 
@@ -504,9 +504,9 @@ $loader->registerDirs(
 $loader->register();
 ```
 
-###3.4 依赖管理
+### 3.4 依赖管理
 
-####3.4.1  [依赖注入容器](http://www.iphalcon.cn/reference/di.html)
+#### 3.4.1  [依赖注入容器](http://www.iphalcon.cn/reference/di.html)
 
 服务容器是一个全局存储的将要被使用的应用程序功能包。每次框架需要的一个组件时，会请求这个使用协定好名称的服务容器。因为Phalcon是一个高度解耦的框架，
 Phalcon\Di
@@ -524,7 +524,7 @@ $di = new FactoryDefault();
 [Phalcon\\Di\\FactoryDefault](http://www.iphalcon.cn/api/Phalcon_Di_FactoryDefault.html) 是 [Phalcon\\Di](http://www.iphalcon.cn/api/Phalcon_Di.html) 的一个变体。为了让事情变得更容易，它已注册了Phalcon的大多数组件。
 因此，我们不需要一个一个注册这些组件。在以后更换工厂服务的时候也不会有什么问题。
 
-####3.4.2  注册视图服务
+#### 3.4.2  注册视图服务
 
 在接下来的部分，我们注册了“视图(view)”服务，指示框架将去指定的目录寻找视图文件。由于视图并非PHP类，它们不能被自动加载器加载。
 
@@ -548,7 +548,7 @@ $di->set(
 );
 ```
 
-####3.4.3  注册基础URI
+#### 3.4.3  注册基础URI
 
 接下来，我们注册一个基础URI，这样通过Phalcon生成包括我们之前设置的“tutorial”文件夹在内的所有的URI。
 我们使用类 Phalcon\Tag 生成超链接，这将在本教程后续部分很重要。
@@ -571,7 +571,7 @@ $di->set(
 );
 ```
 
-###3.5 处理应用请求
+### 3.5 处理应用请求
 
 在这个文件的最后部分，我们发现 [Phalcon\\Mvc\\Application](http://www.iphalcon.cn/api/Phalcon_Mvc_Application.html)。其目的是初始化请求环境，并接收路由到来的请求，接着分发任何发现的动作；收集所有的响应，并在过程完成后返回它们。
 
@@ -587,7 +587,7 @@ $response = $application->handle();
 $response->send();
 ```
 
-###3.6 创建控制器
+### 3.6 创建控制器
 
 默认情况下Phalcon会寻找一个名为“Index”的控制器。当请求中没有控制器或动作时，则使用“Index”控制器作为起点。这个“Index”控制器
 (app/controllers/IndexController.php) 看起来类似：
@@ -606,13 +606,13 @@ class IndexController extends Controller
 
 注意：**该控制器类必须有“Controller”后缀，且控制器动作必须有“Action”后缀。**
 
-###3.7 输出到视图
+### 3.7 输出到视图
 
 使用类 [Phalcon\\Tag](http://www.iphalcon.cn/api/Phalcon_Tag.html) 去生成标记。
 这是一个让我们构建HTML标记的实用类。
 关于生成HTML更详细的文章可以查看 [视图助手](http://www.iphalcon.cn/reference/tags.html)
 
-####3.7.1  创建view
+#### 3.7.1  创建view
 
 ```php
 echo "<h1>Hello!</h1>";
@@ -635,7 +635,7 @@ echo $this->tag->linkTo(
 <a href="/tutorial/signup">Sign Up Here!</a>
 ```
 
-####3.7.2  创建signup/index.phtml
+#### 3.7.2  创建signup/index.phtml
 
 ```html
 <h2>
