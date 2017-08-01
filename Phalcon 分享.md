@@ -681,9 +681,9 @@ public/index.php 文件抛出这个异常：
 Exception: Action “register” was not found on handler “signup”
 ```
 
-###3.8 创建模型
+###3 .8 创建模型
 
-####3.8.1  sql
+#### 3.8.1  sql
 
     ```sql
     CREATE TABLE `users` (
@@ -695,7 +695,7 @@ Exception: Action “register” was not found on handler “signup”
     );
     ```
 
-####3.8.2  models/User.php 模型
+#### 3.8.2  models/User.php 模型
 
     ```php
     use Phalcon\Mvc\Model;
@@ -710,7 +710,7 @@ Exception: Action “register” was not found on handler “signup”
     }
     ```
 
-###3.9 设置数据库连接
+### 3.9 设置数据库连接
 
 ```php
 use Phalcon\Db\Adapter\Pdo\Mysql as DbAdapter;
@@ -731,7 +731,7 @@ $di->set(
 );
 ```
 
-###3.10 使用模型保存数据
+### 3.10 使用模型保存数据
 
 registerAction方法：
 
@@ -1595,8 +1595,8 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
 
 #### 7.9.1 图片
 
-2. tag 方式
-3. 
+1. tag 方式
+
     ```php
     // Generate <img src="/your-app/img/hello.gif">
     echo $this->tag->image("img/hello.gif");
