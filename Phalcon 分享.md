@@ -2047,7 +2047,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
 
 #### 7.9.1 图片
 
-1. tag 方式
+##### 1. tag 方式
 
     ```php
     // Generate <img src="/your-app/img/hello.gif">
@@ -2062,7 +2062,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
     );
 ```
 
-2. volt 方式
+##### 2. volt 方式
     
     ```html
     {# Generate <img src="/your-app/img/hello.gif"> #}
@@ -2075,7 +2075,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
 
 #### 7.9.2 样式表
 
-1. tag 方式
+##### 1. tag 方式
 
     ```php
     // Generate <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Rosario" type="text/css">
@@ -2085,7 +2085,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
     echo $this->tag->stylesheetLink("css/styles.css");
     ```
 
-2. Volt 方式
+##### 2. Volt 方式
 
     ```html
     {# Generate <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Rosario" type="text/css"> #}
@@ -2097,7 +2097,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
 
 #### 7.9.3 js
 
-1. tag 方式
+##### 1. tag 方式
 
     ```php
     // Generate <script src="http://localhost/javascript/jquery.min.js" type="text/javascript"></script>
@@ -2107,7 +2107,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
     echo $this->tag->javascriptInclude("javascript/jquery.min.js");
     ```
 
-2. volt 方式
+##### 2. volt 方式
 
     ```html
     {# Generate <script src="http://localhost/javascript/jquery.min.js" type="text/javascript"></script> #}
