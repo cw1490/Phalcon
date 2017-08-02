@@ -1,5 +1,7 @@
 # Phalcon 分享
 
+[TOC]
+
 ## 一、前言
 
 ### 1.1 概念
@@ -428,27 +430,113 @@ $router->add(
 
 #### 2.3.1 ORM：对象关系映射
 
-### 2.4 前端
+操纵数据库记录作为类和对象
 
-#### 2.4.1 模板引擎
+```php
+use Phalcon\Mvc\Model;
 
-发表的意见代表您的应用程序的用户界面。观点往往与嵌入 PHP 代码执行任务仅涉及数据的演示文稿的 HTML 文件。意见处理提供到 web 浏览器或其他工具，用来使您的应用程序的请求数据的工作
-    
-```html
-<html>
-   <body>
-   <div class='top'><?php $this->partial('shared/ad_banner'); ?></div>
-   <div class='content'>
-       <h1>Robots</h1>
-       <p>Check out our specials for robots:</p>
-       ...
-   </div>
-   <div class='footer'><?php $this->partial('shared/footer'); ?></div>
-   </body>
-</html>    
-```                
+class Robots extends Model
+{
+    public $id;
 
-### 2.5 更多
+    public $name;
+
+    public function initialize()
+    {
+        $this->hasMany('id', 'RobotsParts', 'robots_id');
+    }
+}
+```
+
+#### 2.3.2 PHQL:Phalcon查询sql语句
+
+PHQL 是高级别、 面向对象的 SQL 方言，允许写使用标准化的类似 SQL 语言的查询。PHQL 是作为 （用 C 编写的），翻译中的目标 RDBMS 的语法分析器实现的。为实现最高的性能可能，尔康提供一个解析器，作为 SQLite 使用相同的技术。这项技术提供一个小型的内存中解析器具有很低的内存占用量也是线程安全。
+
+```php
+$phql  = 'SELECT * FROM Formula\Cars ORDER BY Formula\Cars.name';
+$query = $manager->createQuery($phql);
+
+$phql  = 'SELECT Formula\Cars.name FROM Formula\Cars ORDER BY Formula\Cars.name';
+$query = $manager->createQuery($phql);
+
+$phql  = 'SELECT c.name FROM Formula\Cars c ORDER BY c.name';
+$query = $manager->createQuery($phql);
+
+$phql = 'SELECT c.* FROM Cars AS c ORDER BY c.name';
+$cars = $manager->executeQuery($phql);
+foreach ($cars as $car) {
+    echo "名称: ", $car->name, "\n";
+}
+```
+
+#### 2.3.3 事务
+
+Phalcon的事务允许保持数据完整性安全。
+
+```php
+use Phalcon\Mvc\Model\Transaction\Failed as TxFailed;
+use Phalcon\Mvc\Model\Transaction\Manager as TxManager;
+
+try {
+
+    // 创建一个事务管理器
+    $manager     = new TxManager();
+
+    // 请求的事务
+    $transaction = $manager->get();
+
+    // 获取要删除的robots
+    foreach (Robots::find("type = 'mechanical'") as $robot) {
+        $robot->setTransaction($transaction);
+        if ($robot->delete() == false) {
+            // 事情出问题了，我们应该回滚事务
+            foreach ($robot->getMessages() as $message) {
+                $transaction->rollback($message->getMessage());
+            }
+        }
+    }
+
+    // 一切都是正确的，让我们提交事务
+    $transaction->commit();
+
+    echo "Robots 被成功删除 ！";
+
+} catch (TxFailed $e) {
+    echo "失败，原因：  ", $e->getMessage();
+}
+```
+
+#### 2.3.4 缓存
+
+```php
+use Phalcon\Cache\Frontend\Data as FrontendData;
+use Phalcon\Cache\Backend\Memcache as BackendMemcache;
+
+// 设置模型缓存服务
+$di->set('modelsCache', function () {
+
+    // 默认情况下一天的缓存数据
+    $frontCache = new FrontendData(
+        [
+            'lifetime' => 86400,
+        ]
+    );
+
+    // Memcached 连接设置
+    $cache = new BackendMemcache(
+        $frontCache,
+        [
+            'host' => 'localhost',
+            'port' => '11211',
+        ]
+    );
+
+    return $cache;
+});
+      
+```         
+
+[更多请参考官网](https://phalconphp.com/zh/)
 
 
 ## 三、 hello world
@@ -1074,7 +1162,7 @@ public function index3Action() {
 
 ## 六、 视图
 
-    volt是Phalcon中集成的模板引擎，我们也可以更换为其他模板引擎或同时使用多个模板引擎。
+> volt是Phalcon中集成的模板引擎，我们也可以更换为其他模板引擎或同时使用多个模板引擎。[官方文档](http://www.iphalcon.cn/reference/volt.html)
 
 ### 6.1 启用Volt
 
@@ -1129,7 +1217,7 @@ $this->view->setVars(array('products' => $products));
 
 这几个方法都是把值设置给了 view 实例的一个属性 _viewParams ，在调用 _engineRender() 方法时，它取出 _viewParams 的值作为参数传给了具体的渲染引擎。
 
-### 6.4 用法
+### 6.4 控制器用法
 
 `volt` 模板中 **基本用法** 、 **变量** 、**表达式** 、 **流程控制**等部分的具体用法，文档中已有详细说明，请直接翻阅[Phalcon文档](http://www.iphalcon.cn/reference/volt.html#basic-usage) 。这里分享一下大家咨询比较多的几处用法以及踩过的坑。
 
@@ -1157,17 +1245,7 @@ public function test2Action(){
 }
 ```
 
-#### 6.4.3 数值循环（For）
-
-Phalcon文档 中有提到 volt 模板中 对象 和 关联数组 的循环方式，但没有明确例子来说明数值循环的用法。具体用法请看如下示例代码：
-
-```php
-{% for i in 0..100 %}
-  <div>{{i}}</div>
-{% endfor %}
-```
-
-#### 6.4.4 连接符
+#### 6.4.3 连接符
 
 在 volt 模板中的连接符不是 . ，也不是 + ，而是 ~，代码示例如下：
 
@@ -1175,7 +1253,7 @@ Phalcon文档 中有提到 volt 模板中 对象 和 关联数组 的循环方�
 {{ url('user/detail?uid='~user['uid']) }}
 ```
 
-#### 6.4.5 选择视图
+#### 6.4.4 选择视图
 
 视图渲染的是最后的一个相关的控制器和执行动作。你可以使用 Phalcon\Mvc\View::pick() 方法覆盖它
 
@@ -1208,7 +1286,7 @@ class ProductsController extends Controller
 }
 ```
 
-#### 6.4.6 关闭视图
+#### 6.4.5 关闭视图
 
 如果你的控制器不在视图里产生(或没有)任何输出，你可以禁用视图组件来避免不必要的处理，或者采用return方式坐处理
 
@@ -1228,7 +1306,7 @@ class UsersController extends Controller
 }
 ```
 
-#### 6.4.7 局部模版
+#### 6.4.6 局部模版
 
 局部模板是把渲染过程分解成更简单、更好管理的、可以重用不同部分的应用程序块的另一种方式。
 
@@ -1251,16 +1329,390 @@ class UsersController extends Controller
 <?php $this->partial("shared/ad_banner", ["id" => $site->id, "size" => "big"]); ?>
 ```
 
-### 6.4.8 渲染级别
+#### 6.4.7 渲染级别
 
 * [Phalcon View 多个渲染级别之间的关系](Phalcon View 多个渲染级别之间的关系)
 * [Phalcon View 渲染原理及过程](https://segmentfault.com/a/1190000004358686)
+
+### 6.5 Volt 简介
+
+#### 6.5.1 基本用法
+
+* 执行流程控制语句 ： `{% ... %}`
+* 输出表达式： `{{...}}`
+* 注释：`{# ... #}`
+
+eg : 
+
+```html
+{# app/views/posts/show.phtml #}
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{ title }} - An example blog</title>
+    </head>
+    <body>
+
+        {% if show_navigation %}
+            <ul id="navigation">
+                {% for item in menu %}
+                    <li>
+                        <a href="{{ item.href }}">
+                            {{ item.caption }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <h1>{{ post.title }}</h1>
+
+        <div class="content">
+            {{ post.content }}
+        </div>
+
+    </body>
+</html>
+```
+
+#### 6.5.2 变量
+
+* 对象变量：`foo.bar`
+* 数组变量：`foo['bar']`
+
+```html
+{{ post.title }} {# for $post->title #}
+{{ post['title'] }} {# for $post['title'] #}
+```
+
+#### 6.5.3 过滤器
+
+模板中的变量可以通过过滤器进行格式化。操作符 | 适用于对变量进行格式化
+
+```html
+{{ post.title|e }}
+{{ post.content|striptags }}
+{{ name|capitalize|trim }}
+```
+
+volt内置的过滤器
+
+
+| Filter | Description |
+| :-- | :-- |
+| e | Applies Phalcon\Escaper->escapeHtml() to the value |
+| escape | Applies Phalcon\Escaper->escapeHtml() to the value |
+| escape_css | Applies Phalcon\Escaper->escapeCss() to the value |
+| escape_js | Applies Phalcon\Escaper->escapeJs() to the value |
+| escape_attr | Applies Phalcon\Escaper->escapeHtmlAttr() to the value |
+| trim | Applies the [trim](http://php.net/manual/en/function.trim.php) PHP function to the value. Removing extra spaces |
+| left_trim | Applies the [ltrim](http://php.net/manual/en/function.ltrim.php) PHP function to the value. Removing extra spaces |
+| right_trim | Applies the [rtrim](http://php.net/manual/en/function.rtrim.php) PHP function to the value. Removing extra spaces |
+| striptags | Applies the [striptags](http://php.net/manual/en/function.striptags.php) PHP function to the value. Removing HTML tags |
+| slashes | Applies the [slashes](http://php.net/manual/en/function.slashes.php) PHP function to the value. Escaping values |
+| stripslashes | Applies the [stripslashes](http://php.net/manual/en/function.stripslashes.php) PHP function to the value. Removing escaped quotes |
+| capitalize | Capitalizes a string by applying the [ucwords](http://php.net/manual/en/function.ucwords.php) PHP function to the value |
+| lower | Change the case of a string to lowercase |
+| upper | Change the case of a string to uppercase |
+| length | Counts the string length or how many items are in an array or object |
+| nl2br | Changes newlines \n by line breaks (). Uses the PHP function [nl2br](http://php.net/manual/en/function.nl2br.php) |
+| sort | Sorts an array using the PHP function [asort](http://php.net/manual/en/function.asort.php) |
+| keys | Returns the array keys using [array_keys](http://php.net/manual/en/function.array-keys.php) |
+| join | Joins the array parts using a separator [join](http://php.net/manual/en/function.join.php) |
+| format | Formats a string using [sprintf](http://php.net/manual/en/function.sprintf.php). |
+| json_encode | Converts a value into its [JSON](http://php.net/manual/en/function.json-encode.php) representation |
+| json_decode &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Converts a value from its [JSON](http://php.net/manual/en/function.json-encode.php) representation to a PHP representation |
+| abs | Applies the [abs](http://php.net/manual/en/function.abs.php) PHP function to a value. |
+| url_encode | Applies the [urlencode](http://php.net/manual/en/function.urlencode.php) PHP function to the value |
+| default | Sets a default value in case that the evaluated expression is empty (is not set or evaluates to a falsy value) |
+| convert_encoding | Converts a string from one charset to another |
+
+#### 6.5.4 For循环
+
+##### 1、 单层循环
+
+```html
+<ul>
+   {% for robot in robots %}
+       <li>
+           {{ robot.name|e }}
+       </li>
+   {% endfor %}
+</ul>
+```
+
+##### 2、 嵌套循环
+
+```html
+<h1>Robots</h1>
+{% for robot in robots %}
+    {% for part in robot.parts %}
+        Robot: {{ robot.name|e }} Part: {{ part.name|e }} <br />
+    {% endfor %}
+{% endfor %}
+```
+
+##### 3、使用键值
+
+```html
+{% set numbers = ['one': 1, 'two': 2, 'three': 3] %}
+
+{% for name, value in numbers %}
+    Name: {{ name }} Value: {{ value }}
+{% endfor %}
+```
+
+##### 4、 elsefor
+
+以下两种写法等价：
+
+```html
+<h1>Robots</h1>
+{% for robot in robots %}
+    Robot: {{ robot.name|e }} Part: {{ part.name|e }} <br />
+{% else %}
+    There are no robots to show
+{% endfor %}
+
+等价于 
+
+<h1>Robots</h1>
+{% for robot in robots %}
+    Robot: {{ robot.name|e }} Part: {{ part.name|e }} <br />
+{% elsefor %}
+    There are no robots to show
+{% endfor %}
+```
+
+#### 6.5.5 IF
+
+```html
+{% if robot.type === "cyborg" %}
+    Robot is a cyborg
+{% elseif robot.type === "virtual" %}
+    Robot is virtual
+{% elseif robot.type === "mechanical" %}
+    Robot is mechanical
+{% endif %}
+```
+
+#### 6.5.6 循环上下文
+
+A special variable is available inside ‘for’ loops providing you information about
+
+
+| Variable | Description |
+| :-- | :-- |
+| loop.index | The current iteration of the loop. (1 indexed) |
+| loop.index0 | The current iteration of the loop. (0 indexed) |
+| loop.revindex | The number of iterations from the end of the loop (1 indexed) |
+| loop.revindex0 | The number of iterations from the end of the loop (0 indexed) |
+| loop.first | True if in the first iteration. |
+| loop.last | True if in the last iteration. |
+| loop.length | The number of items to iterate |
+
+eg : 
+
+```html
+{% for robot in robots %}
+    {% if loop.first %}
+        <table>
+            <tr>
+                <th>#</th>
+                <th>Id</th>
+                <th>Name</th>
+            </tr>
+    {% endif %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ robot.id }}</td>
+                <td>{{ robot.name }}</td>
+            </tr>
+    {% if loop.last %}
+        </table>
+    {% endif %}
+{% endfor %}
+```
+
+#### 6.5.7 赋值
+
+> 为变量赋值使用`set`关键词
+
+```html
+{% set fruits = ['Apple', 'Banana', 'Orange'] %}
+
+{% set name = robot.name %}
+
+{% set fruits = ['Apple', 'Banana', 'Orange'], name = robot.name, active = true %}
+
+// 进行变量计算
+{% set price += 100.00 %}
+
+{% set age *= 5 %}
+```
+
+#### 6.5.8 数组
+
+创建数组
+
+```html
+{# Simple array #}
+{{ ['Apple', 'Banana', 'Orange'] }}
+
+{# Other simple array #}
+{{ ['Apple', 1, 2.5, false, null] }}
+
+{# Multi-Dimensional array #}
+{{ [[1, 2], [3, 4], [5, 6]] }}
+
+{# Hash-style array #}
+{{ ['first': 1, 'second': 4/2, 'third': '3'] }}
+
+{% set myArray = {'Apple', 'Banana', 'Orange'} %}
+{% set myHash  = {'first': 1, 'second': 4/2, 'third': '3'} %}
+
+```
+
+#### 6.5.9 其他操作
+
+| Operator | Description |
+| :-- | :-- |
+| ~ | Concatenates both operands {{"hello"~"world"}} |
+| \| | Applies a filter in the right operand to the left {{"hello" \|uppercase}} |
+| .. | Creates a range {{'a'..'z'}} {{1..10}} |
+| is | Same as == (equals), also performs tests |
+| in | To check if an expression is contained into other expressions if"a"in"abc" |
+| isnot | Same as != (not equals) |
+| 'a'?'b':'c' | Ternary operator. The same as the PHP ternary operator |
+| ++ | Increments a value |
+| -- | Decrements a value |
+
+#### 6.5.10 函数
+
+| Name | Description |
+| :-- | :-- |
+| content | Includes the content produced in a previous rendering stage |
+| get_content | Same as content |
+| partial | Dynamically loads a partial view in the current template |
+| super | Render the contents of the parent block |
+| time | Calls the PHP function with the same name |
+| date | Calls the PHP function with the same name |
+| dump | Calls the PHP function var_dump() |
+| version | Returns the current version of the framework |
+| constant | Reads a PHP constant |
+| url | Generate a URL using the ‘url’ service |
+
+#### 6.5.11 视图集成
+
+##### 1. partial
+
+```html
+<!-- Simple include of a partial -->
+<div id="footer">{{ partial("partials/footer") }}</div>
+
+<!-- Passing extra variables -->
+<div id="footer">{{ partial("partials/footer", ['links': links]) }}</div>
+```
+
+##### 2. Include
+
+```html
+{# Simple include of a partial #}
+<div id="footer">
+    {% include "partials/footer" %}
+</div>
+
+{# Passing extra variables #}
+<div id="footer">
+    {% include "partials/footer" with ['links': links] %}
+</div>
+```
+
+##### 3. 区别
+
+* ‘Partial’ 既可以引入Volt模板，也可以引入其他模板引擎的模板
+* ‘Partial’ 在引入模板的时候，可以传递表达式（如变量）
+* ‘Partial’ 更适合引入经常有变动的模板
+* ‘Include’ 是引入编译后的模板内容，以提升性能
+* ‘Include’ 只能引入Volt模板
+* ‘Include’ 在编译时须引入现有的模板
+
+#### 6.5.12 模版的继承
+
+> 在基础模板中使用 block 定义代码块，则子模板可以实现重写功能
+
+基础模板
+
+```html
+{# templates/base.volt #}
+<!DOCTYPE html>
+<html>
+    <head>
+        {% block head %}
+            <link rel="stylesheet" href="style.css" />
+        {% endblock %}
+
+        <title>{% block title %}{% endblock %} - My Webpage</title>
+    </head>
+
+    <body>
+        <div id="content">{% block content %}{% endblock %}</div>
+
+        <div id="footer">
+            {% block footer %}&copy; Copyright 2015, All rights reserved.{% endblock %}
+        </div>
+    </body>
+</html>
+```
+
+重写基础模板中的 block 代码块，并不需要去不重写block
+
+```html
+{% extends "templates/base.volt" %}
+
+{% block title %}Index{% endblock %}
+
+{% block head %}<style type="text/css">.important { color: #336699; }</style>{% endblock %}
+
+{% block content %}
+    <h1>Index</h1>
+    <p class="important">Welcome on my awesome homepage.</p>
+{% endblock %}
+```
+
+#### 6.5.13 多重继承
+
+子模板也可以被其他模板继承，[参考](http://www.iphalcon.cn/reference/volt.html#multiple-inheritance)
 
 ## 七、视图助手
 
 因为HTML标签的命名方式和很多标签属性，让书写HTML标签变成一项超级沉闷的工作。Phalcon提供 [Phalcon\Tag](http://www.iphalcon.cn/api/Phalcon_Tag.html) 类来处理这些复杂而无趣的事情。
 
+Tag helper：
 
+| Method | Volt function |
+| :-- | :-- |
+| Phalcon\Tag::linkTo | link_to |
+| Phalcon\Tag::textField | text_field |
+| Phalcon\Tag::passwordField | password_field |
+| Phalcon\Tag::hiddenField | hidden_field |
+| Phalcon\Tag::fileField | file_field |
+| Phalcon\Tag::checkField | check_field |
+| Phalcon\Tag::radioField | radio_field |
+| Phalcon\Tag::dateField | date_field |
+| Phalcon\Tag::emailField | email_field |
+| Phalcon\Tag::numericField | numeric_field |
+| Phalcon\Tag::submitButton | submit_button |
+| Phalcon\Tag::selectStatic | select_static |
+| Phalcon\Tag::select | select |
+| Phalcon\Tag::textArea | text_area |
+| Phalcon\Tag::form | form |
+| Phalcon\Tag::endForm | end_form |
+| Phalcon\Tag::getTitle | get_title |
+| Phalcon\Tag::stylesheetLink | stylesheet_link |
+| Phalcon\Tag::javascriptInclude | javascript_include |
+| Phalcon\Tag::image | image |
+| Phalcon\Tag::friendlyTitle | friendly_title |
 
 ### 7.1 文档类型
 
@@ -1648,7 +2100,7 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
 1. tag 方式
 
     ```php
-   // Generate <script src="http://localhost/javascript/jquery.min.js" type="text/javascript"></script>
+    // Generate <script src="http://localhost/javascript/jquery.min.js" type="text/javascript"></script>
     echo $this->tag->javascriptInclude("http://localhost/javascript/jquery.min.js", false);
     
     // Generate <script src="/your-app/javascript/jquery.min.js" type="text/javascript"></script>
@@ -1665,14 +2117,730 @@ Phalcon\Tag 也提供一些其他的方法去生成一些其他的标签，例�
     {{ javascript_include("javascript/jquery.min.js") }}
     ```
 
-## 八、Volt
+## 八、模型
 
-[官方文档](http://www.iphalcon.cn/reference/volt.html)
+> Phalcon 提供了四种方式操作Mysql数据库：模型、PHQL、数据库抽象层以及原生SQL
+
+### 8.1 DI注册db服务
+
+```php
+//  文件路径：app/core/services.php
+$di -> setShared('db', function () use($config) {
+    $dbconfig = $config -> database -> db;
+    $dbconfig = $dbconfig -> toArray();
+    if (!is_array($dbconfig) || count($dbconfig)==0) {
+        throw new \Exception("the database config is error");
+    }
+    $connection = new \Phalcon\Db\Adapter\Pdo\Mysql(array(
+        "host" => $dbconfig['host'], "port" => $dbconfig['port'],
+        "username" => $dbconfig['username'],
+        "password" => $dbconfig['password'],
+        "dbname" => $dbconfig['dbname'],
+        "charset" => $dbconfig['charset'])
+    );
+    return $connection;
+});
+```
+
+数据库连接信息配置
+
+```php
+// 文件路径：app/config/system.php
+return array(
+    //数据库表配置
+    'database' => array(
+        //数据库连接信息
+        'db' => array(
+            'host' => '127.0.0.1',
+            'port' => 3306,
+            'username' => 'admin',
+            'password' => 'admin',
+            'dbname' => 'test',
+            'charset' => 'utf8',
+        ),
+
+        //表前缀
+        'prefix' => 'test_',
+    ),
+);
+```
+
+### 8.2 数据库表映射
+
+默认情况下，Articles 模型类对应的数据表名是 articles ；若是 ArticlesTags 模型类，则对应的数据库表名是 articles_tags ， 即类名对应着表名。
+
+如果想映射到其他数据库表，可以有以下两种方式
+
+#### 8.2.1 setSource()
+
+```php
+public function initialize()
+{
+    $this->setSource("the_robots");
+}
+```
+
+#### 8.2.2 getSource()
+
+```php
+public function getSource()
+{
+   return "the_robots";
+}
+```
+
+### 8.3 设置表前缀
+
+#### 8.3.1 getSource()
+
+新建一个基础模型，然后所有的模型在该类上继承即可
+
+```php
+class BaseModel extends \Phalcon\Mvc\Model {
+    public function getSource()
+    {
+        return 'gw_'.strtolower(get_class($this));
+    }
+}
+```
+
+#### 8.3.2 tablePrefix配置
+
+##### 1. 配置config
+
+```php
+'database' => array(
+   'adapter'     => 'Mysql',
+   'host'        => 'localhost',
+   'username'    => 'root',
+   'password'    => '',
+   'dbname'      => 'test',
+   'charset'     => 'utf8',
+   'port' => '3306',
+   'tablePrefix' => 'gw_'
+),
+```
+
+##### 2. set_table_source()
+
+在 BaseModel 模型基类中的 set_table_source() 方法
+
+```php
+/**
+* 映射数据表（补上表前缀）
+* @param string $tableName
+* @param null $prefix
+*/
+protected function set_table_source($tableName, $prefix = null){
+   //默认从配置中读取表前缀配置
+   empty($prefix) && $prefix = $this->getDI()->get('config')->database->prefix;
+   //拼接成完整表名之后，再通过setSource()映射数据表
+   $this->setSource($prefix . $tableName);
+}
+```
+
+##### 3. 实例model
+
+```php
+// 文件路径： app/frontend/models/ArticlesModel.php
+class ArticlesModel extends \Marser\App\Frontend\Models\BaseModel {
+
+    /**
+     * 表名
+     */
+    const TABLE_NAME = 'articles';
+
+    public function initialize(){
+        parent::initialize();
+        //映射数据表（补上表前缀）
+        $this->set_table_source(self::TABLE_NAME);
+    }
+}
+```
+
+#### 8.3.3 setSource()
+
+直接使用setSource进行设置
+
+```php
+public function initialize()
+{
+   $this->setSource("test_articles");
+}
+```
+
+### 8.4 CURD
+
+#### 8.4.1 数据表
+
+```sql
+mysql> select * from test_articles;
++-----+--------------+--------------+--------+-------------+--------------+--------+-----------+---------------------+-----------+---------------------+
+| aid | title        | introduce    | status | view_number | is_recommend | is_top | create_by | create_time         | modify_by | modify_time         |
++-----+--------------+--------------+--------+-------------+--------------+--------+-----------+---------------------+-----------+---------------------+
+|   1 | 英语演讲     | 纯口语式       |      1 |           0 | 0            | 0      |         1 | 2017-05-21 05:13:46 |         1 | 2017-05-21 05:13:46 |
+|   2 | 限购政策     | 快买房         |      1 |           0 | 0            | 0      |         1 | 2017-05-21 05:13:46 |         1 | 2017-05-21 05:13:46 |
++-----+--------------+--------------+--------+-------------+--------------+--------+-----------+---------------------+-----------+---------------------+
+```
+
+**其中 aid 是主键，其他每个字段的意思就不做介绍了。**
+
+#### 8.4.2 查找
+
+##### 1. 查找多条记录
+
+使用 find() 函数可以查找多条记录：
+
+```php
+$articleModel = new ArticlesModel();
+//查询所有记录，返回一个对象
+$result = $articleModel->find();
+//循环输出结果
+foreach($result as $record){
+  var_dump($record->aid); 
+  var_dump($record->title);
+}
+```
+
+find() 函数返回的是 Phalcon\Mvc\Model\Resultset\Simple 对象，我们可以通过 foreach 循环输出结果。也可以将结果集对象转成一个二维数组：
+
+```php
+$records = $result->toArray();
+```
+
+##### 2. 查找单条记录
+
+查找单条记录，可以通过使用 findFirst() 函数来实现
+
+```php
+$result1 = $articleModel->findFirst(1);
+print_r($result1->toArray());
+
+// 转成sql
+// SELECT * FROM `test_articles` WHERE `test_articles`.`aid` = 1 LIMIT :APL0
+// 使用条件查询
+$result2 = $articleModel->findFirst("aid = 1");
+```
+
+##### 3. 参数绑定
+
+仔细观察上面的SQL语句，会发现查询条件并没有进行预处理。如果 aid 的值是通过外部数据（比如用户输入）或者变量传输进来，则有可能出现SQL注入的危险。我们必须要用参数绑定的方式来防止SQL注入：
+
+```php
+$result2 = $articleModel->find([
+  'conditions' => 'aid = :aid: AND status = :status:',
+  'bind' => [
+    'aid' => 2,
+    'status' => 1,
+  ],
+]);
+```
+
+最终生成的sql语句为：
+
+```sql
+SELECT * FROM `test_articles` WHERE `test_articles`.`aid` = 2 AND `test_articles`.`status` = 1
+```
+
+参数绑定支持字符串和整数占位符，本篇只介绍字符串占位符，[整数占位符的用法可查阅文档](http://www.iphalcon.cn/reference/models.html#binding-parameters)
+
+##### 4. 查询选项
+
+Phalcon 提供了很多查询选项，常用的查询选项demo如下：
+
+```php
+$articleModel->find([
+  'columns' => 'aid, title', //查询字段
+  'conditions' => 'aid = :aid:',  //查询条件
+  'bind' => [ //参数绑定
+    'aid' => 2
+  ],
+  'order' => 'aid DESC', //排序
+  'limit' => 10, //限制查询结果的数量
+  'offset' => 10, //偏移量
+ ]);
+```
+
+全部的查询选项，请[查阅文档](http://www.iphalcon.cn/reference/models.html#finding-records)。
+ 
+##### 5. in
+
+```php
+$result3 = $articleModel->find([
+  'conditions' => 'aid IN ({aids:array})',
+    'bind' => [
+      'aids' => [1, 2]
+    ],
+]);
+```
+
+##### 6. like
+
+```php
+$result4 = $articleModel->find([
+  'conditions' => 'title like :title:',
+  'bind' => [
+    'title' => '%英语%',
+  ],
+]);
+```
+
+##### 7. 可用的查询条件
+
+可用的查询选项如下：
+
+| <div style="width:90px;">参数</div> | 描述 | 举例 |
+| :-- | :-- | :-- |
+| conditions | 查询操作的搜索条件。用于提取只有那些满足指定条件的记录。默认情况下 [Phalcon\Mvc\Model](http://www.iphalcon.cn/api/Phalcon_Mvc_Model.html) 假定第一个参数就是查询条件。 | `"conditions" => "name LIKE'steve%'"` |
+| columns | 只返回指定的字段，而不是模型所有的字段。 当用这个选项时，返回的是一个不完整的对象。 | `"columns" => "id, name"` |
+| bind | 绑定与选项一起使用，通过替换占位符以及转义字段值从而增加安全性。 | `"bind" => ["status" => "A","type" => "some-time"]` |
+| bindTypes | 当绑定参数时，可以使用这个参数为绑定参数定义额外的类型限制从而更加增强安全性。 | `"bindTypes" =>[Column::BIND_PARAM_STR,Column::BIND_PARAM_INT]` |
+| order | 用于结果排序。使用一个或者多个字段，逗号分隔。 | `"order" => "name DESC,status"` |
+| limit | 限制查询结果的数量在一定范围内。 | `"limit" => 10` |
+| offset | Offset the results of the query by a certain amount | `"offset" => 5` |
+| group | 从多条记录中获取数据并且根据一个或多个字段对结果进行分组。 | `"group" => "name, status"` |
+| for_update | 通过这个选项， [Phalcon\Mvc\Model](http://www.iphalcon.cn/api/Phalcon_Mvc_Model.html) 读取最新的可用数据，并且为读到的每条记录设置独占锁。 | `"for_update" => true` |
+| shared_lock | 通过这个选项， [Phalcon\Mvc\Model](http://www.iphalcon.cn/api/Phalcon_Mvc_Model.html) 读取最新的可用数据，并且为读到的每条记录设置共享锁。 | `"shared_lock" => true` |
+| cache | 缓存结果集，减少了连续访问数据库。 | `"cache" => ["lifetime" =>3600, "key" => "my-find-key"]` |
+| hydration | Sets the hydration strategy to represent each returned record in the result | `"hydration" =>Resultset::HYDRATE_OBJECTS` |
+
+#### 8.4.3 添加
+
+##### 1. 添加单条记录
+
+添加单条记录可用 `create()` 函数
+
+```php
+$articleModel = new ArticlesModel();
+$result = $articleModel->create([
+    'title' => 'phalcon测试',
+    'introduce' => 'Phalcon入门教程',
+    'status' => 1,
+    'view_number' => 1,
+    'is_recommend' => 1,
+    'is_top' => 1,
+    'create_by' => 1,
+    'create_time' => date('Y-m-d H:i:s'),
+    'modify_by' => 1,
+    'modify_time' => date('Y-m-d H:i:s')
+]);
+if (!$result) { 
+    //添加记录失败，获取错误信息
+    $errorMessage = implode(',', $this->getMessages());
+    echo $errorMessage;
+}else {
+    //添加记录成功，获取新增记录的主键aid
+    $aid = $articleModel->aid;
+    echo $aid;
+}
+```
+
+* `create()` 函数返回的是 boolean 值。
+* 如果返回值为 false ，我们可以通过模型的 `getMessages()` 函数来获取错误信息；
+* 若返回值为 true ，则可以直接获取最新的主键ID，即我们通常所说的 lastInsertId 。
+
+##### 2. 批量添加记录
+
+Phalcon 中并没有提供批量添加记录的函数，需要开发者自己动手实现
+
+###### a. 循环逐条添加
+
+通过循环逐次添加一条记录，这种方法在性能上损耗较大，**不推荐使用**。但是这种方法牵涉到 Phalcon 模型的底层实现原理，所以这里拿出来跟大家分析一下
+
+```php
+$articleModel = new ArticlesModel();
+//var_dump($articleModel->title);  //下面测试用
+for ($i = 1; $i <= 10; $i++) {
+    $data = [
+        'title' => "phalcon测试{$i}",
+        'introduce' => "Phalcon入门教程{$i}",
+        'status' => $i,
+        'view_number' => $i,
+        'is_recommend' => 1,
+        'is_top' => 1,
+        'create_by' => $i,
+        'create_time' => date('Y-m-d H:i:s'),
+        'modify_by' => $i,
+        'modify_time' => date('Y-m-d H:i:s')
+    ];
+    $result = $articleModel->create($data);
+    if (!$result) {
+        $errorMessage = implode(',', $articleModel->getMessages());
+        exit($errorMessage);
+    }else {
+        $aid = $articleModel->aid;
+        echo $aid;
+        //var_dump($articleModel->title);  //下面测试用
+    }
+    echo '<br />';
+}
+```
+
+这段代码的运行结果可能会出乎很多人的意料，只有循环中的第一条数据入库成功，并返回了主键ID，其他的数据入库时直接报错：
+
+    Record cannot be created because it already exists
+
+意思是因为记录已经存在，所以无法再次入库。在前面添加单条记录的时候，我们有提到获取 lastInsertId 的方式，是直接通过模型的成员属性方式获取：
+
+    $aid = $articleModel->aid;
+    
+关键点就在这里，Phalcon 模型对象会把当前入库的数据，全部赋值给模型对象的成员属性，包括主键ID。我们做个测试，打开上面代码中的两处注释部分，再次运行后可以看到，第一次打印 title 成员属性的时候，会报一个 Notice 错误，提示信息是未定义的成员属性。当第二次打印 title 成员属性的时候，却有值了，而且是循环中第一条记录的 title 值。看到这里，相信大家应该已经差不多能明白其中的实现原理了。因为入库成功那条记录返回的主键ID也被赋值给模型对象的成员属性，create() 函数内部会判断当前对象的主键成员属性是否有值，在有值的情况下，就不再生成SQL语句发送到Mysql服务端，直接抛出错误信息。请记住这一点，Phalcon 模型的 update() 函数也是基于此原理实现的（下一篇教程会提到）。那么，通过循环逐条添加记录的方法要如何实现呢？
+
+```php
+$articleModel = new ArticlesModel();
+for ($i = 1; $i <= 10; $i++) {
+    $data = [
+        'title' => "phalcon测试{$i}",
+        'introduce' => "Phalcon入门教程{$i}",
+        'status' => $i,
+        'view_number' => $i,
+        'is_recommend' => 1,
+        'is_top' => 1,
+        'create_by' => $i,
+        'create_time' => date('Y-m-d H:i:s'),
+        'modify_by' => $i,
+        'modify_time' => date('Y-m-d H:i:s')
+    ];
+    $clone = clone $articleModel; //克隆一个新对象，使用新对象来调用create()函数
+    $result = $clone->create($data);
+    if (!$result) {
+        $errorMessage = implode(',', $clone->getMessages());
+        exit($errorMessage);
+    }else {
+        $aid = $clone->aid;
+        echo $aid;
+    }
+    echo '<br />';
+}
+```
+
+每循环一次，就克隆出一个新对象，通过新对象来调用 `create()` 函数添加数据记录。因为每个对象间的成员属性都是独立的，所以全部数据都会添加成功。
+
+###### b. 批量添加
+
+我们常用的批量添加方式是生成一条 insert 语句把数据添加入库，下面跟大家分享我在项目中封装的函数
+
+```php
+//文件路径：Marser\app\frontend\models\ArticlesModel.php
+class ArticlesModel extends \Marser\App\Frontend\Models\BaseModel {
+
+    /*** 表名*/
+    const TABLE_NAME = 'articles';
+
+    public function initialize(){
+        parent::initialize();
+        $this->set_table_source(self::TABLE_NAME);
+    }
+
+    /**
+     * 批量添加
+     * @param array $data
+     * @return boolean
+     * @throws \Exception
+     */
+    public function batch_insert(array $data){
+        if (count($data) == 0) {
+            throw new \Exception('参数错误');
+        }
+        $keys = array_keys(reset($data));
+        $keys = array_map(function ($key) {
+            return "`{$key}`";
+        }, $keys);
+        $keys = implode(',', $keys);
+        $sql = "INSERT INTO " . $this->getSource() . " ({$keys}) VALUES ";
+        foreach ($data as $v) {
+            $v = array_map(function ($value) {
+                return "'{$value}'";
+            }, $v);
+            $values = implode(',', array_values($v));
+            $sql .= " ({$values}), ";
+        }
+        $sql = rtrim(trim($sql), ',');
+        //DI中注册的数据库服务名称为"db"
+        $result = $this->getDI()->get('db')->execute($sql);
+        if (!$result) {
+            throw new \Exception('批量入库记录');
+        }
+        return $result;
+    }
+}
+```
+
+#### 8.4.4 更新
+
+##### 1. 更新记录
+
+按照惯例，我们想像的可能是如下操作：
+
+```php
+$articleModel = new ArticlesModel();
+$articleModel->aid = 3;  //为主键成员属性赋值 
+$result = $articleModel->update([
+    'title' => 'Phalcon更新测试',
+]);
+```
+
+上述代码运行之后，抛出一个异常：
+
+    SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'introduce' cannot be null
+
+意思是 introduce 字段值不能为空。我们回头再看前面监听到的 update SQL语句，执行 `update()` 函数的时候，把 test_articles 表中的所有字段都更新了。也就是说，调用 `update()` 函数的时候，需要更新表中的所有字段，而不能只更新某个字段或者一部分字段，所以此处，需要传入全部字段做为参数：
+
+```php
+$articleModel = new ArticlesModel();
+$articleModel->aid = 3;
+$result = $articleModel->update([
+    'title' => 'Phalcon更新测试',
+    'introduce' => "Phalcon入门教程2",
+    'status' => 2,
+    'view_number' => 2,
+    'is_recommend' => 1,
+    'is_top' => 1,
+    'create_by' => 1,
+    'create_time' => date('Y-m-d H:i:s'),
+    'modify_by' => 1,
+    'modify_time' => date('Y-m-d H:i:s')
+]);
+if(!$result){
+    throw new \Exception('数据更新失败');
+}
+//获取影响行数（假设DI中注册的数据库服务名称为“db”）
+$affectedRows = $this->getDI()->get('db')->affectedRows();
+```
+
+##### 2. 更新部分字段
+
+解决方法：
+
+1. 原生SQL
+2. PHQL
+3. 封装函数
+
+```php
+/**
+* 封装phalcon model的update函数，实现仅更新数据变更字段，而非所有字段更新
+* @param array|null $data
+* @param null $whiteList
+* @return bool
+*/
+public function iupdate(array $data = null, $whiteList = null)
+{
+   if (count($data) > 0) {
+       //获取当前模型驿应的数据表所有字段
+       $attributes = $this->getModelsMetaData()->getAttributes($this);
+       //取所有字段和需要更新的数据字段的差集，并过滤
+       $this->skipAttributesOnUpdate(array_diff($attributes, array_keys($data)));
+   }
+   return parent::update($data, $whiteList);
+}
+```
+
+函数很简单，先获取当前模型对应数据表的所有字段，并和需要更新的数据字段之间取差集，然后调用 skipAttributesOnUpdate 函数进行过滤。上述更新部分字段的示例代码就可以修改成：
+
+```php
+$articleModel = new ArticlesModel();
+$articleModel->aid = 3;
+//注意这里的函数名
+$result = $articleModel->iupdate([
+    'title' => 'Phalcon更新测试',
+]);
+if(!$result){
+    throw new \Exception('数据更新失败');
+}
+$affectedRows = $this->getDI()->get('db')->affectedRows();
+```
+
+至此就能更新成功，并能获取影响行数。
+注意：**当更新的数据和表中的数据相同时**，`update()` 函数会返回 true 值，但是影响行数却是0
+
+#### 8.4.5 save()
+
+Phalcon 模型的` save()` 函数会判断当前模型对象中主键成员属性是否有值，
+
+1. 若有值，就内部调用 `update()` 函数执行更新操作；
+2. 若没值，就内部调用 `create()` 函数执行插入操作。
+
+#### 8.4.6 删除记录
+
+删除记录和更新记录类似，要先调用 `findFirst()` 之后，再调用 `delete()` 函数删除一条数据。
+我们在知道主键的情况，也可以直接给主键成员属性赋值：
+
+```php
+$articleModel = new ArticlesModel();
+$articleModel->aid = 4;
+$result = $articleModel->delete();
+$affectedRows = $this->getDI()->get('db')->affectedRows();
+```
+
+值得注意的是，不论主键ID是否存在，delete() 都会返回 true 值，而影响行数会正常返回。所以建议根据影响行数来判断是否执行成功。
+如果需要批量删除，或者使用非主键作为删除条件，那么只能写原生SQL或者PHQL去删除数据，当然也可以自己封装一个函数。
 
 ## 九、Tools
 
+### 9.1 下载
+
+我们可以从 [Github](https://github.com/phalcon/phalcon-devtools)
+上下载或克隆下来这个跨平台的开发辅助工具
+
+### 9.2 安装（Installation）
+
+下面详尽的说明了如何在不同的操作系统平台上安装这个辅助开发工具：
+
+-   [Windows 系统下使用 Phalcon 开发工具（Phalcon Developer Tools on
+    Windows）](http://www.iphalcon.cn/reference/wintools.html)
+
+-   [Mac OS X 系统下使用 Phalcon 开发工具（Phalcon Developer Tools on Mac OS
+    X）](http://www.iphalcon.cn/reference/mactools.html)
+
+-   [Linux 系统下使用 Phalcon 开发工具（Phalcon Developer Tools on
+    Linux）](http://www.iphalcon.cn/reference/linuxtools.html)
+
+### 9.3 获取可用的命令
+
+```bash
+phalcon commands
+```
+
+![](media/14996664730279/14996680673872.jpg)
+
+### 9.4 生成项目框架
+
+我们可以使用Phalcon开发辅助工具生成预先定义的项目架构。
+默认情况下，phalcon开发辅助工具会使用apache的mod_rewrite来生成程序的骨架.
+要创建项目我们只需要在我们的 web服务器根目录下输入如下命令：
+
+```bash
+$ phalcon create-project store
+```
+
+![](media/14996664730279/14996693283647.jpg)
+
+### 9.5 查看帮助
+
+同其他linux命令 --help
+
+``` shell
+phalcon project --help
+```
+
+![](media/14996664730279/14996694373220.jpg)
+
+### 9.6 生成控制器
+
+1.  phalcon create-controller –name test
+
+2.  phalcon controller –name test
+
+![](media/14996664730279/14996710225012.jpg)
+
+### 9.7 数据库配置
+
+在新版本的phalcon工具中，新生成的配置文件为**config.php**
+
+### 9.8 生成模型
+
+1.  phalcon model products
+
+2.  phalcon model --name tablename
+
+```php
+class Products extends Model
+{
+    /**
+     * @var integer
+     */
+    public $id;
+
+    /**
+     * @var integer
+     */
+    public $typesId;
+
+    /**
+     * @var string
+     */
+    public $name;
+
+    /**
+     * @var string
+     */
+    public $price;
+
+    /**
+     * @var integer
+     */
+    public $quantity;
+
+    /**
+     * @var string
+     */
+    public $status;
+}
+```
+
+使用phalcon开发辅助工具我们可以有若干种方式来生成模型。
+可以有选择的生成若干个模型或是全部生成。
+亦可以指定生成公有属性或是生成setter和getter方法。
+
+Options:
+
+| options            | 说明                                                                                                               |
+|--------------------|--------------------------------------------------------------------------------------------------------------------|
+| \--name=s          | Table name 表名                                                                                                    |
+| \--schema=s        | Name of the schema. [optional] schema名                                                                            |
+| \--namespace=s     | Model’s namespace [optional] 模型命名空间                                                                          |
+| \--get-set         | Attributes will be protected and have setters/getters. [optional] 设置字段访问属性为私有 并添加setters/getters方法 |
+| \--extends=s       | Model extends the class name supplied [optional] 指定扩展类名                                                      |
+| \--excludefields=l | Excludes fields defined in a comma separated list [optional]                                                       |
+| \--doc             | Helps to improve code completion on IDEs [optional] 辅助IDE的自动完成功能                                          |
+| \--directory=s     | Base path on which project will be created [optional] 项目的根目录                                                 |
+| \--force           | Rewrite the model. [optional] 重写模型                                                                             |
+| \--trace           | Shows the trace of the framework in case of exception. [optional] 出错时显示框架trace信息                          |
+| \--mapcolumn       | Get some code for map columns. [optional] 生成字映射的代码                                                         |
+| \--abstract        | Abstract Model [optional] 抽象模型                                                                                 |
+
+### 9.9 生成基本的 CRUD
+
+使用phalcon开发辅助工具我们可以直接快速的生成一个模型的CRUD操作。
+如果我们想快速的生成模型的CRUD操作只需要使用phalcon辅助开发工具的中scaffold命令即可。
+
+代码生成后，你可以根据自己的需要修改生成的代码。很多开发者可能不会去使用这个功能，其实这东西有时不是太好用，很多时候开发者往往会手动的书写相关代码。使用scaffold产生的代码可以
+帮助我们理解框架是如何工作的当然也可以帮助我们制作出快速原型来。
+下面的截图展示了基于products表的scaffold:
+
+```bash
+phalcon scaffold --table-name products
+```
+
+### 9.10 工具的 Web 界面
+
+基本不会用到，略过，感兴趣的自己研究下
+
+### 9.11 集成工具到 PhpStorm
+
+#### 1、下载phalcon-devtools包
+
+在 [https://github.com/phalcon/phalcon-devtools](https://github.com/phalcon/phalcon-devtools) 下载phalcon-devtools，并解压到任意目录。
+
+#### 2、phpstorm导入Phalcon库
+
+![1.png](media/14996664730279/4189246969.png)
+
+如上图所示，右键单击“External Libraries”，选择“Configure PHP Include Paths”，弹出如下操作框：
+![2.png](media/14996664730279/3346321480.png)
+
+单点“+”按钮，在弹出的操作框中，选择到刚才phalcon-devtools的解压目录，然后双击选中“/ide/stubs/Phalcon/”目录，点击“应用”和“确定”即可。如上图所示。
+
+#### 3、phpstorm自动提示Phalcon语法
+
+按上述步骤操作完毕并重启phpstorm后，即可以测试phpstorm自动提示Phalcon语法功能，如下图所示即表示导入成功。
+![3.png](media/14996664730279/962275394.png)
+
+
+
 ## 十、附录
 
+* [marser-phalcon-demo](https://github.com/KevinJay/marser-phalcon-demo)
 
 
 
