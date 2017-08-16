@@ -1,5 +1,7 @@
 # Phalcon 分享第二季
 
+[TOC]
+
 ## 一、前言
 
 通过上次分享，假设你们对Phalcon有了一个大致的了解，本次分享主要介绍一些组件。接下来的内容大部分都是来自于官方文档，由于很大一部分内容没有中文内容，存在中英文对照的部分为我翻译，难免出错，勿怪！
@@ -96,8 +98,8 @@ class Robots extends Model{
 #### 2.2.3 比较
 
 * 公共属性的方式可以在开发中降低复杂度。
-* getters/setters 的实现方式可以显著的增强应用的可测试性、扩展性和可维护性。 
-* ORM同时兼容这两种方法。  
+* getters/setters 的实现方式可以显著的增强应用的可测试性、扩展性和可维护性。
+* ORM同时兼容这两种方法。
 
 #### 2.2.4 注意
 
@@ -211,7 +213,7 @@ foreach ($robots as $robot) {
     ```php
     $robot = Robots::findFirst("type = 'mechanical'");
     ```
-    
+
 2. 通过关联数组
 
     ```php
@@ -222,7 +224,7 @@ foreach ($robots as $robot) {
         ]
     );
     ```
-     
+
 3. 通过面向对象
 
     ```php
@@ -233,15 +235,15 @@ foreach ($robots as $robot) {
         ->order("name")
         ->execute();
     ```
-    
+
     静态方法 query() 返回一个对IDE自动完成友好的 Phalcon\Mvc\Model\Criteria 对象。
 
 4. 通过属性名称
 
-    Phalcon提供了一个`findFirstBy<property-name>()`方法    
-    
+    Phalcon提供了一个`findFirstBy<property-name>()`方法
+
     这个方法扩展了前面提及的 findFirst() 方法。它允许您利用方法名中的属性名称，通过将要搜索的该字段的内容作为参数传给它，来快速从一个表执行检索操作
-    
+
     ```php
     $name = "Terminator";
     $robot = Robots::findFirstByName($name);
@@ -292,7 +294,7 @@ foreach ($robots as $robot) {
         ]
     );
     ```
-    
+
 3. 混合字符串
 
     ```php
@@ -308,7 +310,7 @@ foreach ($robots as $robot) {
         ]
     );
     ```
-    
+
 4. 注意
 
    * 如果是数字占位符，则必须把它们定义成整型（如1或者2）。若是定义为字符串型（如”1”或者”2”），则这个占位符不会被替换。
@@ -317,7 +319,7 @@ foreach ($robots as $robot) {
 5. 设置参数的“bindTypes”
 
     1. 使用bindTypes允许你根据数据类型来定义参数应该如何绑定
-    
+
         ```php
         use Phalcon\Db\Column;
         use Store\Toys\Robots;
@@ -340,9 +342,9 @@ foreach ($robots as $robot) {
             ]
         );
         ```
-    
+
         > 默认的参数绑定类型是 Phalcon\Db\Column::BIND_PARAM_STR , 若所有字段都是string类型，则不用特意去设置参数的“bindTypes”.
-        
+
     2. 如果你的绑定参数是array数组，那么数组索引必须从数字0开始
 
         ```php
@@ -360,13 +362,13 @@ foreach ($robots as $robot) {
             ]
         );
         ```
-        
+
         > 参数绑定的方式适用于所有与查询相关的方法，如 find() , findFirst() 等等, 同时也适用于与计算相关的方法，如 count(), sum(), average() 等等.
 
 6. 隐式的参数绑定
 
     若使用如下方式，phalcon也会自动为你进行参数绑定:
-    
+
     ```php
     use Store\Toys\Robots;
     // Explicit query using bound parameters
@@ -398,13 +400,13 @@ $robots = Robots::find();
 ```
 
 ##### 2. 循环结果集
-    
+
 ```php
 // Traversing with a foreach
 foreach ($robots as $robot) {
    echo $robot->name, "\n";
 }
-    
+
 // Traversing with a while
 $robots->rewind();
 while ($robots->valid()) {
@@ -419,7 +421,7 @@ while ($robots->valid()) {
 ```php
 // Count the resultset
 echo count($robots);
-    
+
 // Alternative way to count the resultset
 echo $robots->count();
 ```
@@ -430,18 +432,18 @@ echo $robots->count();
 // Move the internal cursor to the third robot
 $robots->seek(2);
 $robot = $robots->current();
-    
+
 // Access a robot by its position in the resultset
 $robot = $robots[5];
-    
+
 // Check if there is a record in certain position
 if (isset($robots[3])) {
   $robot = $robots[3];
 }
-    
+
 // Get the first record in the resultset
 $robot = $robots->getFirst();
-    
+
 // Get the last record
 $robot = $robots->getLast();
 ```
@@ -456,18 +458,18 @@ $robot = $robots->getLast();
    ```php
    // Query all records from model parts
    $parts = Parts::find();
-   
+
    // Store the resultset into a file
    file_put_contents(
        "cache.txt",
        serialize($parts)
    );
-   
+
    // Get parts from file
    $parts = unserialize(
        file_get_contents("cache.txt")
    );
-   
+
    // Traverse the parts
    foreach ($parts as $part) {
        echo $part->id;
@@ -519,7 +521,7 @@ class Robots extends Model
     }
 }
 ```
-    
+
 如果使用`getters/setters`方法代替公共属性的取/赋值，你能在它被调用时，对成员属性进行初始化:
 
 ```php
@@ -810,7 +812,7 @@ public function beforeDelete() {
 ```
 
 ## 三、模型关系
-  
+
 ### 3.1 模型关系
 
 四种关系类型：
@@ -1281,7 +1283,7 @@ If you alter a belongsTo() relationship to act as foreign key, it will validate 
 
     如果你改变了一个`belongsto()`的关系作为外键，它会验证插入或更新这些字段在referenced model的有效值。
     同样，如果一个hasmany() / hasone()改变将验证记录，如果记录是不能用在参考模型中删除。
-    
+
 ```php
 use Phalcon\Mvc\Model;
 
@@ -1358,7 +1360,7 @@ class Robots extends Model {
 ### 3.12 存储关系记录
 
 > 可以使用魔术属性存储记录及其相关属性
-    
+
 ```php
 // Create an artist
 $artist = new Artists();
@@ -1411,8 +1413,8 @@ $album->save();
 ```
 
 > 同时保存album和artist隐含地使用事务，因此如果保存相关记录出错，则不会保存父项。消息被传递给用户以获取关于任何错误的信息。
- 
- 
+
+
 注意：通过重载下面的方法来添加相关的实体是不可能的：
 
 * Phalcon\Mvc\Model::beforeSave()
@@ -1701,12 +1703,12 @@ $di->set(
     }
 );
 
-``` 
+```
 
 As models access the default database connection, all SQL statements that are sent to the database system will be logged in the file:
 
 > 当模型访问默认数据库连接时，发送到数据库系统的所有SQL语句都将在文件中记录：
- 
+
 ```php
 use Store\Toys\Robots;
 $robot = new Robots();
@@ -1716,7 +1718,7 @@ $robot->created_at = "1956-07-21";
 if ($robot->save() === false) {
     echo "Cannot save robot";
 }
-``` 
+```
 
 生成的日志如下：
 
@@ -2722,17 +2724,17 @@ This will return you an collection ([Doctrine_Collection](http://www.doctrine-pr
 ```php
 $q = Doctrine_Query::create()
    ->from('Post p')
-   ->setHydrationMode(Doctrine::HYDRATE_RECORD); 
+   ->setHydrationMode(Doctrine::HYDRATE_RECORD);
    // Unnecessary, HYDATE_RECORD is default method
 
-$resultSet = $q->execute(); 
+$resultSet = $q->execute();
 // $resultSet is an Doctrine_Collection object
 
 foreach ($resultSet as $post) {
     // $post is an Post object
     echo $post->getTitle();
-    echo $post['title']; 
-    // Each Doctrine's Model object implements ArrayAccess 
+    echo $post['title'];
+    // Each Doctrine's Model object implements ArrayAccess
     // interface so this is possible
     echo $post->myCustomMethod();
 }
@@ -2747,10 +2749,10 @@ $q = Doctrine_Query::create()
    ->select('p.created_at')
    ->from('Post p')
    ->where('p.id = ?', 321)
-   ->setHydrationMode(Doctrine::HYDRATE_SINGULAR_SCALAR); 
+   ->setHydrationMode(Doctrine::HYDRATE_SINGULAR_SCALAR);
 
-$createdAt = $q->execute(); 
-// $createdAt has value of first column from first record 
+$createdAt = $q->execute();
+// $createdAt has value of first column from first record
 // from result set (eg.: 2008-04-06 21:22:35)
 ```
 
@@ -2838,7 +2840,7 @@ PostgreSQL uses sequences to generate auto-numeric values, by default, Phalcon t
 
 > `Phalcon\Mvc\Model`能够识别的标识列。基于数据库的系统，这些列可以是一系列像PostgreSQL或MySQL中的auto_increment列的情况。
 > PostgreSQL使用序列自动生成数字值，默认情况下，`Phalcon`试图获取生成的价值序列中的“table_field_seq”，
- 
+
 例如：robots_id_seq，如果序列具有不同的名称，getsequencename()需要实施的方法：
 
 ```php
@@ -3324,7 +3326,7 @@ $query = new Query(
    "SELECT * FROM Cars",
    $this->getDI()
 );
-    
+
 // Execute the query returning a result if any
 $cars = $query->execute();
 ```
@@ -3337,7 +3339,7 @@ $cars = $query->execute();
 // Executing a simple query
 $query = $this->modelsManager->createQuery("SELECT * FROM Cars");
 $cars  = $query->execute();
-    
+
 // With bound parameters
 $query = $this->modelsManager->createQuery("SELECT * FROM Cars WHERE name = :name:");
 $cars  = $query->execute(
@@ -4618,7 +4620,7 @@ for ($i = 1; $i <= 10; $i++) {
 ## 十二、 路由
 
 * 路由器组件用来定义处理接收到的请求的路由，指向相应的控制器或者处理程序。
-* 路由器只是简单解析一个URI获取这些信息。 
+* 路由器只是简单解析一个URI获取这些信息。
 * 路由器有两种模式：
     * MVC模式
     * 匹配模式
@@ -4950,7 +4952,7 @@ Another use case for conversors is binding a model into a route. This allows the
 > 对于转换另一个用例是结合模型转化为路径。这允许将模型直接传递给定义的操作：
 
 ```php
-// This example works off the assumption that the ID is being used as parameter 
+// This example works off the assumption that the ID is being used as parameter
 // in the url: /products/4
 $route = $router->add(
     "/products/{id}",
@@ -5243,7 +5245,7 @@ Phalcon\Mvc\Router has a default behavior that provides a very simple routing th
 
 For example, for a URL like this `http://phalconphp.com/documentation/show/about.html`, this router will translate it as follows:
 
- | 
+ |
 --- | ---
 | Controller | documentation |
 | Action | show |
@@ -7113,7 +7115,7 @@ public function saveAction() {
 > “flashSession”属性是先前在依赖注入容器中设置的闪存。 为了能成功使用flashSession消息者，你需要先启动 session 。
 
 
-## 二十一、使用 Session 
+## 二十一、使用 Session
 
 会话组件组件提供了一种面向对象的方式访问session数据。
 
@@ -7480,9 +7482,9 @@ class MyController extends Controller {
 
 Phalcon在权限方面通过 [Phalcon\Acl](http://www.iphalcon.cn/api/Phalcon_Acl.html) 提供了一个轻量级的 ACL(访问控制列表). [Access Control Lists](http://en.wikipedia.org/wiki/Access_control_list) (ACL) 允许系统对用户的访问权限进行控制，比如允许访问某些资源而不允许访问其它资源等。 这里我们建议开发者了解一些关于ACL的技术。
 
-ACL有两部分组成即**角色**和**资源**。 
+ACL有两部分组成即**角色**和**资源**。
 
-* 资源即是ACL定义的权限所依附的对象。 
+* 资源即是ACL定义的权限所依附的对象。
 * 角色即是ACL所字义的请求者的身份
 * ACL决定了角色对资源的访问权限，允许访问或拒绝访问。
 
@@ -7512,7 +7514,7 @@ $acl->setDefaultAction(
 ```php
 use Phalcon\Acl\Role;
 // 创建角色
-// The first parameter is the name, 
+// The first parameter is the name,
 // the second parameter is an optional description.
 $roleAdmins = new Role("Administrators", "Super-User role");
 $roleGuests = new Role("Guests");
@@ -8081,7 +8083,7 @@ $loader->registerDirs(
 ```php
 use Phalcon\Events\Event;
 use Phalcon\Events\Manager as EventsManager;
-use Phalcon\Loader; 
+use Phalcon\Loader;
 $eventsManager = new EventsManager();
 $loader = new Loader();
 $loader->registerNamespaces(
